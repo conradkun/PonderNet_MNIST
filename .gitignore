@@ -1,0 +1,5 @@
+MNIST/
+wandb/
+checkpoints/
+__pycache__/
+*.ckpt
