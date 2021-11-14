@@ -7,6 +7,28 @@ import pytorch_lightning as pl
 
 
 class MNIST_DataModule(pl.LightningDataModule):
+    '''
+        DataModule to hold the MNIST dataset. Accepts different transforms for train and test to
+        allow for extrapolation experiments.
+
+        Parameters
+        ----------
+        data_dir : str
+            Directory where MNIST will be downloaded or taken from.
+
+        batch_size : int
+            Batch size for both all dataloaders.
+
+        num_workers : int
+            Number of workers for multi-processing data loading.
+
+        train_transform : [transform]
+            List of transformations for the training dataset.
+
+        test_transform : [transform]
+            List of transformations for the test and validation datasets.
+    '''
+
     def __init__(self, data_dir='./', batch_size=256, num_workers=8, train_transform=None, test_transform=None):
         super().__init__()
         self.data_dir = data_dir
@@ -45,13 +67,16 @@ class MNIST_DataModule(pl.LightningDataModule):
             self.mnist_test = MNIST(self.data_dir, train=False, transform=self.test_transform)
 
     def train_dataloader(self):
+        '''returns training dataloader'''
         mnist_train = DataLoader(self.mnist_train, batch_size=self.batch_size, num_workers=self.num_workers)
         return mnist_train
 
     def val_dataloader(self):
+        '''returns validation dataloader'''
         mnist_val = DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=self.num_workers)
         return mnist_val
 
     def test_dataloader(self):
+        '''returns test dataloader'''
         mnist_test = DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=self.num_workers)
         return mnist_test

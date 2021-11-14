@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 
-from pondernet import PonderCNN
+from pondernet import PonderMNIST
 from data import MNIST_DataModule
 from config import(
     BATCH_SIZE,
@@ -10,8 +10,6 @@ from config import(
     NUM_WORKERS,
     LR,
     GRAD_NORM_CLIP,
-    N_CLASSES,
-    N_INPUT,
     N_HIDDEN,
     N_HIDDEN_CNN,
     N_HIDDEN_LIN,
@@ -28,31 +26,27 @@ if __name__ == "__main__":
 
     # initialize datamodule and model
     mnist = MNIST_DataModule(batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
-    model = PonderCNN(n_classes=N_CLASSES,
-                      n_input=N_INPUT,
-                      n_hidden=N_HIDDEN,
-                      n_hidden_cnn=N_HIDDEN_CNN,
-                      n_hidden_lin=N_HIDDEN_LIN,
-                      kernel_size=KERNEL_SIZE,
-                      max_steps=MAX_STEPS,
-                      lambda_p=LAMBDA_P,
-                      beta=BETA,
-                      lr=LR)
+    model = PonderMNIST(n_hidden=N_HIDDEN,
+                        n_hidden_cnn=N_HIDDEN_CNN,
+                        n_hidden_lin=N_HIDDEN_LIN,
+                        kernel_size=KERNEL_SIZE,
+                        max_steps=MAX_STEPS,
+                        lambda_p=LAMBDA_P,
+                        beta=BETA,
+                        lr=LR)
 
     # setup logger
-    wandb_logger = WandbLogger(project='PonderNet', name='interpolation', offline=False)
+    wandb_logger = WandbLogger(project='PonderNet', name='interpolation', offline=True)
     wandb_logger.watch(model)
 
     trainer = Trainer(
         logger=wandb_logger,                     # W&B integration
         gpus=-1,                                 # use all available GPU's
+        max_epochs=EPOCHS,                       # maximum number of epochs
         gradient_clip_val=GRAD_NORM_CLIP,        # gradient clipping
+        val_check_interval=0.25,                 # validate 4 times per epoch
         precision=16,                            # train in half precision
-        auto_lr_find=True,                       # find the best lr automatically
         deterministic=True)                      # for reproducibility
-
-    # find the best lr automatically (disable to use given lr)
-    trainer.tune(model, datamodule=mnist)
 
     # fit the model
     trainer.fit(model, datamodule=mnist)
