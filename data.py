@@ -46,16 +46,25 @@ class MNIST_DataModule(pl.LightningDataModule):
         MNIST(self.data_dir, train=False, download=True)
 
     def setup(self, stage=None):
-        '''called on each GPU separately - stage defines if we are at fit, validate, test or predict step'''
-        # we set up only relevant datasets when stage is specified (automatically set by Lightning)
+        '''
+            Called on each GPU separately - stage defines if we are
+            at fit, validate, test or predict step.
+        '''
+        # we set up only relevant datasets when stage is specified
         if stage in [None, 'fit', 'validate']:
-            mnist_train = MNIST(self.data_dir, train=True, transform=(self.train_transform or self.default_transform))
+            mnist_train = MNIST(self.data_dir, train=True,
+                                transform=(self.train_transform or self.default_transform))
             self.mnist_train, self.mnist_val = random_split(mnist_train, [55000, 5000])
         if stage == 'test' or stage is None:
             if self.test_transform is None or isinstance(self.test_transform, transforms.Compose):
-                self.mnist_test = MNIST(self.data_dir, train=False, transform=(self.test_transform or self.default_transform))
+                self.mnist_test = MNIST(self.data_dir,
+                                        train=False,
+                                        transform=(self.test_transform or self.default_transform))
             else:
-                self.mnist_test = [MNIST(self.data_dir, train=False, transform=test_transform) for test_transform in self.test_transform]
+                self.mnist_test = [MNIST(self.data_dir,
+                                         train=False,
+                                         transform=test_transform)
+                                   for test_transform in self.test_transform]
 
     def train_dataloader(self):
         '''returns training dataloader'''
@@ -72,7 +81,9 @@ class MNIST_DataModule(pl.LightningDataModule):
         if isinstance(self.mnist_test, MNIST):
             return DataLoader(self.mnist_test, batch_size=self.batch_size)
 
-        mnist_test = [DataLoader(test_dataset, batch_size=self.batch_size) for test_dataset in self.mnist_test]
+        mnist_test = [DataLoader(test_dataset,
+                                 batch_size=self.batch_size)
+                      for test_dataset in self.mnist_test]
         return mnist_test
 
 

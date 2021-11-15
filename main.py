@@ -39,7 +39,7 @@ if __name__ == "__main__":
                         lr=LR)
 
     # setup logger
-    logger = WandbLogger(project='PonderNet', name='PonderNet', offline=True)
+    logger = WandbLogger(project='PonderNet', name='PonderNet', offline=False)
     logger.watch(model)
 
     trainer = Trainer(
