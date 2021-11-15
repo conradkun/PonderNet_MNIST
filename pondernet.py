@@ -144,13 +144,6 @@ class PonderMNIST(pl.LightningModule):
             else:
                 lambda_n = torch.sigmoid(self.lambda_layer(h)).squeeze()
 
-            if torch.any(lambda_n == 1) and n == 1:
-                print('caught a 1')
-                threshold = 0.01
-                almost_ones = h.new_ones((1)) - 0.01
-                lambda_n = torch.where(torch.abs(lambda_n - 1) > threshold, lambda_n, almost_ones)
-                # raise ValueError
-
             # obtain output and p_n
             y_n = self.outpt_layer(h)
             p_n = un_halted_prob * lambda_n
@@ -234,21 +227,45 @@ class PonderMNIST(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         '''
-            Perform the test step. Logs relevant metrics.
+            Perform the test step. Returns relevant metrics.
 
             Parameters
             ----------
             batch : (torch.Tensor, torch.Tensor)
                 Current teest batch to evaluate.
-        '''
-        loss, _, acc, steps = self._get_loss_and_metrics(batch)
 
-        # logging
-        self.log('test/steps', steps)
-        self.log('test/accuracy', acc)
-        self.log('test/total_loss', loss.get_total_loss())
-        self.log('test/reconstruction_loss', loss.get_rec_loss())
-        self.log('test/regularization_loss', loss.get_reg_loss())
+            Returns
+            -------
+            acc : torch.Tensor
+                Accuracy for the current batch.
+
+            steps : torch.Tensor
+                Average number of steps for the current batch.
+        '''
+        _, _, acc, steps = self._get_loss_and_metrics(batch)
+
+        # for test_epoch_end
+        return (acc, steps)
+
+    def test_epoch_end(self, outputs):
+        '''
+            Gather metrics from all test dataloaders after an epoch
+            to log them.
+
+            Parameters
+            ----------
+            outputs : list
+                Outputs from the test steps of each test dataloader. 
+        '''
+        if not isinstance(outputs[0], list):
+            outputs = [outputs]
+        for i, dataloader_outputs in enumerate(outputs):
+            for test_step_out in dataloader_outputs:
+                (acc, steps) = test_step_out
+
+                # logging
+                self.log(f'test_{i}/steps', steps)
+                self.log(f'test_{i}/accuracy', acc)
 
     def configure_optimizers(self):
         '''
@@ -306,8 +323,14 @@ class PonderMNIST(pl.LightningModule):
 
         # forward pass
         y, p, halted_step = self(data)
-        if torch.any(p == 0):
-            raise ValueError('caught an inf!')
+
+        # remove elements with infinities (after taking the log)
+        if torch.any(p == 0) and self.training:
+            valid_indices = torch.all(p != 0, dim=0)
+            p = p[:, valid_indices]
+            y = y[:, valid_indices]
+            halted_step = halted_step[valid_indices]
+            target = target[valid_indices]
 
         # calculate the loss
         loss_rec_ = self.loss_rec(p, y, target)

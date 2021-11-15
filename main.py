@@ -7,7 +7,6 @@ from data import MNIST_DataModule
 from config import(
     BATCH_SIZE,
     EPOCHS,
-    NUM_WORKERS,
     LR,
     GRAD_NORM_CLIP,
     N_HIDDEN,
@@ -25,7 +24,7 @@ if __name__ == "__main__":
     pl.seed_everything(1234)
 
     # initialize datamodule and model
-    mnist = MNIST_DataModule(batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
+    mnist = MNIST_DataModule(batch_size=BATCH_SIZE)
     model = PonderMNIST(n_hidden=N_HIDDEN,
                         n_hidden_cnn=N_HIDDEN_CNN,
                         n_hidden_lin=N_HIDDEN_LIN,
@@ -36,11 +35,11 @@ if __name__ == "__main__":
                         lr=LR)
 
     # setup logger
-    wandb_logger = WandbLogger(project='PonderNet', name='interpolation', offline=True)
-    wandb_logger.watch(model)
+    logger = WandbLogger(project='PonderNet', name='interpolation', offline=True)
+    logger.watch(model)
 
     trainer = Trainer(
-        logger=wandb_logger,                     # W&B integration
+        logger=logger,                     # W&B integration
         gpus=-1,                                 # use all available GPU's
         max_epochs=EPOCHS,                       # maximum number of epochs
         gradient_clip_val=GRAD_NORM_CLIP,        # gradient clipping
