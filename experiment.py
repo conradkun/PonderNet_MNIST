@@ -3,7 +3,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 
 from pondernet import PonderMNIST
-from data import MNIST_DataModule
+from data import MNIST_DataModule, get_transforms
 from config import(
     BATCH_SIZE,
     EPOCHS,
@@ -23,8 +23,12 @@ if __name__ == "__main__":
     # set seeds
     pl.seed_everything(1234)
 
+    train_transform, test_transform = get_transforms()
+
     # initialize datamodule and model
-    mnist = MNIST_DataModule(batch_size=BATCH_SIZE)
+    mnist = MNIST_DataModule(batch_size=BATCH_SIZE,
+                             train_transform=train_transform,
+                             test_transform=test_transform)
     model = PonderMNIST(n_hidden=N_HIDDEN,
                         n_hidden_cnn=N_HIDDEN_CNN,
                         n_hidden_lin=N_HIDDEN_LIN,
@@ -35,7 +39,7 @@ if __name__ == "__main__":
                         lr=LR)
 
     # setup logger
-    logger = WandbLogger(project='PonderNet', name='interpolation', offline=False)
+    logger = WandbLogger(project='PonderNet', name='extrapolation', offline=False)
     logger.watch(model)
 
     trainer = Trainer(
