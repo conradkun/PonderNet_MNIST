@@ -1,4 +1,3 @@
-from torch._C import dtype
 import wandb
 from math import floor
 
@@ -225,7 +224,7 @@ class PonderMNIST(pl.LightningModule):
         # for custom callback
         return preds
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx, dataset_idx=0):
         '''
             Perform the test step. Returns relevant metrics.
 
@@ -244,28 +243,9 @@ class PonderMNIST(pl.LightningModule):
         '''
         _, _, acc, steps = self._get_loss_and_metrics(batch)
 
-        # for test_epoch_end
-        return (acc, steps)
-
-    def test_epoch_end(self, outputs):
-        '''
-            Gather metrics from all test dataloaders after an epoch
-            to log them.
-
-            Parameters
-            ----------
-            outputs : list
-                Outputs from the test steps of each test dataloader. 
-        '''
-        if not isinstance(outputs[0], list):
-            outputs = [outputs]
-        for i, dataloader_outputs in enumerate(outputs):
-            for test_step_out in dataloader_outputs:
-                (acc, steps) = test_step_out
-
-                # logging
-                self.log(f'test_{i}/steps', steps)
-                self.log(f'test_{i}/accuracy', acc)
+        # logging
+        self.log(f'test_{dataset_idx}/steps', steps)
+        self.log(f'test_{dataset_idx}/accuracy', acc)
 
     def configure_optimizers(self):
         '''

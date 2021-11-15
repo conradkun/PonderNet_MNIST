@@ -1,4 +1,3 @@
-
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import MNIST
 from torchvision import transforms
@@ -53,7 +52,7 @@ class MNIST_DataModule(pl.LightningDataModule):
             mnist_train = MNIST(self.data_dir, train=True, transform=(self.train_transform or self.default_transform))
             self.mnist_train, self.mnist_val = random_split(mnist_train, [55000, 5000])
         if stage == 'test' or stage is None:
-            if self.test_transform is None or not isinstance(self.test_transform[0], list):
+            if self.test_transform is None or isinstance(self.test_transform, transforms.Compose):
                 self.mnist_test = MNIST(self.data_dir, train=False, transform=(self.test_transform or self.default_transform))
             else:
                 self.mnist_test = [MNIST(self.data_dir, train=False, transform=test_transform) for test_transform in self.test_transform]
@@ -75,3 +74,32 @@ class MNIST_DataModule(pl.LightningDataModule):
 
         mnist_test = [DataLoader(test_dataset, batch_size=self.batch_size) for test_dataset in self.mnist_test]
         return mnist_test
+
+
+def get_transforms():
+    # define transformations
+    transform_22 = transforms.Compose([
+        transforms.RandomRotation(degrees=22.5),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    transform_45 = transforms.Compose([
+        transforms.RandomRotation(degrees=45),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    transform_67 = transforms.Compose([
+        transforms.RandomRotation(degrees=67.5),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    transform_90 = transforms.Compose([
+        transforms.RandomRotation(degrees=90),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    train_transform = transform_22
+    test_transform = [transform_22, transform_45, transform_67, transform_90]
+
+    return train_transform, test_transform
