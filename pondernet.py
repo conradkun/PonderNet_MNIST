@@ -270,7 +270,8 @@ class PonderMNIST(pl.LightningModule):
 
     def configure_callbacks(self):
         '''returns a list of callbacks'''
-        early_stopping = EarlyStopping(monitor='val/accuracy', mode='max', patience=4)
+        # we choose high patience sine we validate 4 times per epoch to have nice graphs
+        early_stopping = EarlyStopping(monitor='val/accuracy', mode='max', patience=6)
         model_checkpoint = ModelCheckpoint(monitor="val/accuracy", mode='max')
         log_predictions = LogPredictionsCallback()
         return [early_stopping, model_checkpoint, log_predictions]
